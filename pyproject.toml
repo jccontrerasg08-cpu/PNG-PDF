@@ -1,0 +1,24 @@
+[project]
+name = "anythingintopdfbot"
+version = "0.1.0"
+description = "FastAPI service for converting anythingintopdfbot uploads to PDF"
+requires-python = ">=3.10"
+dependencies = [
+  "fastapi>=0.115.0",
+  "gunicorn>=22.0.0",
+  "jinja2>=3.1.4",
+  "pillow>=10.4.0",
+  "pydantic>=2.7.0",
+  "python-multipart>=0.0.9",
+  "uvicorn[standard]>=0.30.0",
+]
+
+[project.optional-dependencies]
+test = [
+  "httpx>=0.27.0",
+  "pytest>=8.2.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

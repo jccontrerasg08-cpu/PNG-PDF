@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>anythingintopdfbot</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="card">
+      <p class="eyebrow">FastAPI · Kubernetes ready</p>
+      <h1>Convert images and documents to PDF</h1>
+      <p class="lede">Upload a supported file and receive a generated PDF immediately. Files are processed in temporary storage and are not persisted.</p>
+
+      <form action="/api/convert" method="post" enctype="multipart/form-data">
+        <label for="file">Choose a file</label>
+        <input id="file" name="file" type="file" required />
+        <button type="submit">Convert to PDF</button>
+      </form>
+
+      <section>
+        <h2>Supported extensions</h2>
+        <ul class="extensions">
+          {% for extension in supported_extensions %}
+          <li>{{ extension }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>
