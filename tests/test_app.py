@@ -1,8 +1,10 @@
 from io import BytesIO
 
+import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
+from app.config import settings
 from app.main import app
 
 
@@ -44,4 +46,61 @@ def test_unsupported_upload_returns_415() -> None:
         files={"file": ("sample.exe", b"nope", "application/octet-stream")},
     )
 
+    assert response.status_code == 415
+
+
+def test_dotfile_named_upload_is_still_recognized() -> None:
+    buffer = BytesIO()
+    Image.new("RGB", (16, 16), "blue").save(buffer, format="PNG")
+    buffer.seek(0)
+
+    response = client.post(
+        "/api/convert",
+        files={"file": (".png", buffer, "image/png")},
+    )
+
+    assert response.status_code == 200
+    assert response.content.startswith(b"%PDF")
+
+
+def test_truncated_image_returns_422_not_500() -> None:
+    buffer = BytesIO()
+    Image.new("RGB", (64, 64), "green").save(buffer, format="PNG")
+    truncated = buffer.getvalue()[: len(buffer.getvalue()) // 2]
+
+    response = client.post(
+        "/api/convert",
+        files={"file": ("broken.png", truncated, "image/png")},
+    )
+
+    assert response.status_code == 422
+
+
+def test_oversized_upload_returns_413(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "max_upload_size_bytes", 10)
+
+    response = client.post(
+        "/api/convert",
+        files={"file": ("big.txt", b"x" * 1000, "text/plain")},
+    )
+
+    assert response.status_code == 413
+
+
+def test_allowed_extensions_setting_actually_restricts_uploads(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "allowed_extensions", {".pdf"})
+
+    response = client.get("/api/supported-types")
+    assert response.json()["extensions"] == [".pdf"]
+
+    buffer = BytesIO()
+    Image.new("RGB", (8, 8), "red").save(buffer, format="PNG")
+    buffer.seek(0)
+
+    response = client.post(
+        "/api/convert",
+        files={"file": ("sample.png", buffer, "image/png")},
+    )
     assert response.status_code == 415

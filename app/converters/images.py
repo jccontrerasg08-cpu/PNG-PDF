@@ -17,11 +17,25 @@ class ImageToPdfConverter:
                 frames = []
                 for frame_index in range(getattr(image, "n_frames", 1)):
                     image.seek(frame_index)
-                    frames.append(image.convert("RGB").copy())
+                    frames.append(self._flatten_to_rgb(image))
 
                 first_frame, *remaining_frames = frames
                 first_frame.save(destination, "PDF", save_all=True, append_images=remaining_frames)
-        except UnidentifiedImageError as exc:
+        except (UnidentifiedImageError, OSError) as exc:
             raise UnsupportedConversionError("The uploaded image could not be read.") from exc
 
         return ConversionResult(path=destination, filename=destination.name)
+
+    def _flatten_to_rgb(self, image: Image.Image) -> Image.Image:
+        """Composite transparent pixels onto white instead of discarding alpha."""
+
+        has_transparency = image.mode in ("RGBA", "LA") or (
+            image.mode == "P" and "transparency" in image.info
+        )
+        if not has_transparency:
+            return image.convert("RGB").copy()
+
+        rgba = image.convert("RGBA")
+        background = Image.new("RGB", rgba.size, "white")
+        background.paste(rgba, mask=rgba.split()[3])
+        return background

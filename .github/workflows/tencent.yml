@@ -21,10 +21,10 @@ on:
 
 # Environment variables available to all jobs and steps in this workflow
 env:
-  TKE_IMAGE_URL: ccr.ccs.tencentyun.com/demo/mywebapp
+  TKE_IMAGE_URL: ccr.ccs.tencentyun.com/demo/anythingintopdfbot
   TKE_REGION: ap-guangzhou
   TKE_CLUSTER_ID: cls-mywebapp
-  DEPLOYMENT_NAME: tke-test
+  DEPLOYMENT_NAME: anythingintopdfbot
 
 permissions:
   contents: read
