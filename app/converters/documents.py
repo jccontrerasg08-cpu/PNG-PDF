@@ -55,16 +55,36 @@ class TextDocumentToPdfConverter:
             return [""]
 
         wrapped: list[str] = []
-        current = words[0]
-        for word in words[1:]:
-            candidate = f"{current} {word}"
-            if font.getlength(candidate) <= max_width:
-                current = candidate
-            else:
-                wrapped.append(current)
-                current = word
+        current = ""
+        for word in words:
+            for chunk in self._split_word(word, font, max_width):
+                candidate = f"{current} {chunk}" if current else chunk
+                if current and font.getlength(candidate) > max_width:
+                    wrapped.append(current)
+                    current = chunk
+                else:
+                    current = candidate
         wrapped.append(current)
         return wrapped
+
+    def _split_word(self, word: str, font: ImageFont.ImageFont, max_width: int) -> list[str]:
+        """Hard-break a single word that is wider than max_width on its own."""
+
+        if font.getlength(word) <= max_width:
+            return [word]
+
+        pieces: list[str] = []
+        current = ""
+        for char in word:
+            candidate = current + char
+            if current and font.getlength(candidate) > max_width:
+                pieces.append(current)
+                current = char
+            else:
+                current = candidate
+        if current:
+            pieces.append(current)
+        return pieces
 
     def _new_page(self) -> Image.Image:
         return Image.new("RGB", self.page_size, "white")

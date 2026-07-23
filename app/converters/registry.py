@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from app.converters.base import ConversionResult, Converter, UnsupportedConversionError
+from app.converters.base import ConversionResult, Converter, UnsupportedConversionError, extract_extension
 from app.converters.documents import TextDocumentToPdfConverter
 from app.converters.images import ImageToPdfConverter
 from app.converters.pdf import PdfPassthroughConverter
@@ -21,7 +21,7 @@ def get_supported_extensions() -> set[str]:
 def convert_to_pdf(source: Path, destination_dir: Path) -> ConversionResult:
     """Convert source to PDF using the converter registered for its extension."""
 
-    extension = source.suffix.lower()
+    extension = extract_extension(source.name)
     for converter in _CONVERTERS:
         if extension in converter.supported_extensions:
             return converter.convert(source, destination_dir)
