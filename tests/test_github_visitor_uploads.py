@@ -74,15 +74,20 @@ def test_windows_screenshot_filename_with_spaces_converts_to_pdf() -> None:
 
 
 @pytest.mark.parametrize(
-    ("filename", "payload", "content_type"),
+    ("filename", "kind", "content_type"),
     [
-        ("foto_vacaciones.jpg", _jpeg_bytes((56, 40), (210, 140, 70)), "image/jpeg"),
-        ("снимок.png", _png_bytes((56, 40), (70, 130, 90)), "image/png"),
+        ("foto_vacaciones.jpg", "jpeg", "image/jpeg"),
+        ("снимок.png", "png", "image/png"),
     ],
 )
 def test_unicode_or_vacation_photo_filename_converts_to_pdf(
-    filename: str, payload: bytes, content_type: str
+    filename: str, kind: str, content_type: str
 ) -> None:
+    payload = (
+        _jpeg_bytes((56, 40), (210, 140, 70))
+        if kind == "jpeg"
+        else _png_bytes((56, 40), (70, 130, 90))
+    )
     _assert_pdf_response(_convert(filename, payload, content_type))
 
 
