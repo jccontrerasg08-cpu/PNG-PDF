@@ -1,30 +1,13 @@
-# anythingintopdfbot
+# Anything into PDF
 
-FastAPI web application and REST API for converting uploaded files into PDFs. The app is designed for containerized Kubernetes deployments and uses temporary filesystem storage only.
+Send a photo, Word file, spreadsheet, SVG, or note — get a PDF back. Use the website, the API, the CLI, or Telegram. Files are not persisted.
 
-## Features
+GitHub repo: [PNG-PDF](https://github.com/jccontrerasg08-cpu/PNG-PDF) · package: `anythingintopdfbot`
 
-- Web upload page at `/` (multi-file or drag-and-drop; merged into one PDF)
-- REST conversion endpoint at `/api/convert`
-- Optional Telegram bot: send a photo or file, get a PDF back (`TELEGRAM_BOT_TOKEN`)
-- Supported-types endpoint at `/api/supported-types`
-- Health endpoint at `/healthz`
-- Readiness endpoint at `/readyz`
-- Modular converter architecture for PDFs, images, and simple text documents
-- Dockerfile using Gunicorn with Uvicorn workers
-- Kubernetes Deployment and Service manifests
+**GitHub About / topics** (Settings → General → Topics): `pdf` `converter` `telegram-bot` `fastapi` `heic` `libreoffice` `docker`  
+Suggested description: `Anything into PDF — web, API, CLI, and Telegram. Send a file, get a PDF. Nothing is stored.`
 
-## Supported conversions
-
-| Module | Extensions | Behavior |
-| --- | --- | --- |
-| PDF | `.pdf` | Passes through files that contain `%PDF-` in the first 1KB. Rejects non-PDF bytes named `.pdf`. |
-| Images | `.png`, `.jpg`, `.jpeg`, `.webp`, `.bmp`, `.tiff`, `.tif`, `.gif`, `.heic`, `.heif` | Packs a PDF the [img2pdf](https://github.com/josch/img2pdf) way: JPEG bytes are embedded as `/DCTDecode` (not re-encoded); other rasters are lossless zlib `/FlateDecode`. Pillow (+ pillow-heif) is only used to decode, apply EXIF orientation, default 96 DPI, and flatten alpha onto white. A `.heic`/`.heif` name is rejected unless the bytes are actually HEIC/HEIF. |
-| SVG | `.svg`, `.svgz` | CairoSVG to PDF. If CairoSVG is not installed, LibreOffice Draw is used when present. |
-| Documents | `.txt`, `.md` | Renders UTF-8 text (including a BOM) as paginated A4 PDFs. `.md` is drawn as source text, not rendered Markdown. |
-| Office | `.doc`, `.docx`, `.xls`, `.xlsx`, `.ppt`, `.pptx`, `.odt`, `.ods`, `.odp`, `.rtf` | Headless LibreOffice PDF (layout preserved, including old `.doc`). Without LibreOffice, `.docx`/`.xlsx`/`.pptx` fall back to extracted text on A4. |
-
-## Local development
+## Quick start
 
 On Debian/Ubuntu, install `python3-venv` first (`sudo apt install python3-venv`). SVG needs `libcairo2`; old `.doc` and layout-faithful Office need `libreoffice-writer`, `libreoffice-calc`, and `libreoffice-impress`.
 
@@ -35,25 +18,28 @@ pip install -e '.[test]'
 uvicorn app.main:app --reload
 ```
 
-Open <http://localhost:8000> to use the web UI, or convert without the server:
+Open <http://localhost:8000>, drop files on the form, click **Convert to PDF**.
+
+Or skip the server:
 
 ```bash
 python -m app photo.png notes.txt
 ```
 
-## Telegram bot
+## Telegram
 
-Same converter as the web UI. Not a clone of [iLovePDF-bot](https://github.com/nabilanavab/ilovepdf) (no watermark/OCR/pdf-to-image). Pattern from [Doc2Pdf-bot](https://github.com/AlejandroFuster/Doc2Pdf-bot): send a file, get a PDF.
-
-1. Talk to [@BotFather](https://core.telegram.org/bots/tutorial), copy the token.
-2. Local polling (no public HTTPS):
+Copy `.env.example` to `.env` (gitignored) and paste your BotFather token:
 
 ```bash
-export TELEGRAM_BOT_TOKEN=123456:ABC
+cp .env.example .env
+# TELEGRAM_BOT_TOKEN=123456:ABC
+# TELEGRAM_BOT_USERNAME=YourBot   # optional; shows a t.me link on the homepage
 python -m app.telegram
 ```
 
-3. Or webhook on the same FastAPI process (`POST /telegram/webhook`):
+Then message the bot a photo or file. Same converter as the website.
+
+On a public host, use a webhook instead of polling:
 
 ```bash
 export TELEGRAM_BOT_TOKEN=123456:ABC
@@ -65,6 +51,26 @@ curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
 
 Without `TELEGRAM_BOT_TOKEN`, `/telegram/webhook` returns 404 and the web UI still works.
 
+## What it converts
+
+| Kind | Extensions | Behavior |
+| --- | --- | --- |
+| PDF | `.pdf` | Passes through files that contain `%PDF-` in the first 1KB. |
+| Images | `.png` `.jpg` `.jpeg` `.webp` `.bmp` `.tiff` `.tif` `.gif` `.heic` `.heif` | JPEG bytes stay JPEG inside the PDF. Other rasters are lossless Flate. EXIF, 96 DPI, alpha onto white. A `.heic` name that is not HEIC is rejected. |
+| SVG | `.svg` `.svgz` | CairoSVG (LibreOffice Draw if CairoSVG is missing). |
+| Text | `.txt` `.md` | UTF-8 as A4 pages. Markdown is source text, not rendered. |
+| Office | `.doc` `.docx` `.xls` `.xlsx` `.ppt` `.pptx` `.odt` `.ods` `.odp` `.rtf` | LibreOffice PDF when `soffice` is installed. Else `.docx`/`.xlsx`/`.pptx` text on A4. |
+
+## API
+
+- `POST /api/convert` — multipart field `file` (one or many)
+- `GET /api/supported-types`
+- `GET /healthz` · `GET /readyz`
+
+```bash
+curl -F 'file=@IMG_1234.JPG' http://localhost:8000/api/convert -o IMG_1234.pdf
+```
+
 ## Tests
 
 ```bash
@@ -75,86 +81,39 @@ pytest
 
 ```bash
 docker build -t anythingintopdfbot:latest .
-docker run --rm -p 8000:8000 anythingintopdfbot:latest
+docker run --rm -p 8000:8000 \
+  -e TELEGRAM_BOT_TOKEN \
+  -e TELEGRAM_BOT_USERNAME \
+  anythingintopdfbot:latest
 ```
 
+## Deploy
 
-## API location
-
-When deployed, the browser UI and REST API live on the same Kubernetes host. Put your public hostname in `k8s/ingress.yaml` at `spec.rules[0].host`; the REST API will then be available at:
-
-- `POST https://YOUR_HOST/api/convert`
-- `GET https://YOUR_HOST/api/supported-types`
-
-Put your container registry image in `k8s/kustomization.yaml` under `images.newName` and `images.newTag`. The UI does not need a separate API URL because it submits to `/api/convert` on the same host.
-
-
-
-## Deploy on Kuberns
-
-This repo is ready for Kuberns. Kuberns can connect directly to your GitHub repo, detect the root-level `Procfile`, install dependencies from `requirements.txt`, and run the `web` service command.
-
-1. Push this repository to GitHub.
-2. Open the Kuberns dashboard and choose **Connect and Configure**.
-3. Connect GitHub, select this repository and branch, and name the service `anythingintopdfbot`.
-4. Select **Backend Service**.
-5. You do not need environment variables for the current app.
-6. Click **Deploy**.
-7. After deployment, open the Kuberns-provided URL. The Web UI is `/`, and the API is `POST /api/convert`.
-
-Kuberns deployment files in this repo:
-
-- `Procfile` tells Kuberns how to start the FastAPI service.
-- `runtime.txt` pins the Python runtime.
-- `requirements.txt` lists the Python dependencies.
-
-If Kuberns shows a custom run command field, use:
-
-```bash
-gunicorn app.main:app --worker-class uvicorn.workers.UvicornWorker --workers 2 --bind 0.0.0.0:$PORT
-```
-
-## Deploy from GitHub only
-
-If this repo is only open here and on GitHub, push it to GitHub and use the included GitHub Actions workflow. On every push to `main`, `master`, or `work`, `.github/workflows/build-and-deploy.yml` builds the Docker image and pushes it to GitHub Container Registry as:
-
-```text
-ghcr.io/YOUR_GITHUB_USERNAME/anythingintopdfbot:latest
-ghcr.io/YOUR_GITHUB_USERNAME/anythingintopdfbot:<commit-sha>
-```
-
-To let GitHub deploy to Kubernetes too, add this repository secret in GitHub:
-
-- `KUBE_CONFIG`: the kubeconfig content for the Kubernetes cluster/service account that can deploy to the `anythingintopdfbot` namespace.
-
-Then push to GitHub or run the workflow manually from **Actions → Build and deploy anythingintopdfbot → Run workflow**. If `KUBE_CONFIG` is not set, the workflow still builds and pushes the image, but it skips Kubernetes deployment.
-
-## Deploy to Kubernetes
-
-1. Build and push the image:
-
-```bash
-docker build -t YOUR_REGISTRY/anythingintopdfbot:latest .
-docker push YOUR_REGISTRY/anythingintopdfbot:latest
-```
-
-2. Edit `k8s/kustomization.yaml` and replace `ghcr.io/YOUR_ORG/anythingintopdfbot` with your image repository.
-3. Edit `k8s/ingress.yaml` and replace `anythingintopdfbot.example.com` with your public domain.
-4. Deploy:
+When deployed, the UI and API share one host. Set `k8s/ingress.yaml` `spec.rules[0].host` and `k8s/kustomization.yaml` image name/tag.
 
 ```bash
 kubectl apply -k k8s/
 kubectl rollout status deployment/anythingintopdfbot -n anythingintopdfbot
 ```
 
-5. Open `https://YOUR_DOMAIN/` for the Web UI, or call `POST https://YOUR_DOMAIN/api/convert` for the REST API.
-
-## Kubernetes
-
-Apply the manifests after publishing the container image your cluster can pull:
+Optional Telegram on the cluster (do not put the token in git):
 
 ```bash
-kubectl apply -k k8s/
+kubectl -n anythingintopdfbot create secret generic anythingintopdfbot \
+  --from-literal=TELEGRAM_BOT_TOKEN='YOUR_TOKEN' \
+  --from-literal=TELEGRAM_BOT_USERNAME='YourBot'
 ```
 
-If you use a remote registry, update `k8s/kustomization.yaml` to reference that image instead of the `ghcr.io/YOUR_ORG/anythingintopdfbot:latest` placeholder. See `k8s/README.md` for redeploy instructions.
+The Deployment already reads that secret when it exists.
+
+### GitHub Actions
+
+Pushes to `main`, `master`, or `work` build `ghcr.io/YOUR_GITHUB_USERNAME/anythingintopdfbot`. Repository secret `KUBE_CONFIG` enables Kubernetes apply.
+
+### Kuberns
+
+Connect the GitHub repo; it uses `Procfile` + `requirements.txt`. Optional env: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`. Run command if asked:
+
+```bash
+gunicorn app.main:app --worker-class uvicorn.workers.UvicornWorker --workers 2 --bind 0.0.0.0:$PORT
+```

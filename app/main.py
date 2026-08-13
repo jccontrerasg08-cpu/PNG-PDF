@@ -9,14 +9,18 @@ from starlette.background import BackgroundTask
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app.config import settings
+from app.config import settings, telegram_bot_username
 from app.converters.base import extract_extension
 from app.jobs import ConversionRejected, convert_named_files, effective_extensions
 from app.telegram import TelegramApi, handle_update
 
 BASE_DIR = Path(__file__).resolve().parent
 
-app = FastAPI(title=settings.app_name, version="0.1.0")
+app = FastAPI(
+    title=settings.display_name,
+    description="Convert photos, Office, SVG, and text to PDF. Web, API, CLI, and Telegram. Files are not stored.",
+    version=settings.version,
+)
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
@@ -45,7 +49,11 @@ def index(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
         request,
         "index.html",
-        {"supported_extensions": sorted(effective_extensions())},
+        {
+            "supported_extensions": sorted(effective_extensions()),
+            "display_name": settings.display_name,
+            "telegram_bot_username": telegram_bot_username(),
+        },
     )
 
 
@@ -122,7 +130,7 @@ def http_exception_handler(request: Request, exc: HTTPException) -> HTMLResponse
         return templates.TemplateResponse(
             request,
             "error.html",
-            {"detail": exc.detail, "status_code": exc.status_code},
+            {"detail": exc.detail, "status_code": exc.status_code, "display_name": settings.display_name},
             status_code=exc.status_code,
         )
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})

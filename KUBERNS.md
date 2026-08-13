@@ -17,7 +17,7 @@ Use this when your only deployment target is Kuberns and the code lives in GitHu
 5. Connect your GitHub account if it is not already connected.
 6. Select this repository and the branch you want to deploy.
 7. Name the service `anythingintopdfbot`.
-8. Leave environment variables empty for now; this app does not require any.
+8. Optional env: `TELEGRAM_BOT_TOKEN` and `TELEGRAM_BOT_USERNAME` for the Telegram bot. The website works without them.
 9. Click **Deploy**.
 10. Use the generated Kuberns URL.
 

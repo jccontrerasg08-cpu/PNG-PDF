@@ -22,7 +22,8 @@ def test_homepage_returns_html_with_convert_form() -> None:
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
     html = response.text
-    assert "<h1>Convert images and documents to PDF</h1>" in html
+    assert "<h1>Anything into PDF</h1>" in html
+    assert "<title>Anything into PDF</title>" in html
     assert 'action="/api/convert"' in html
     assert 'method="post"' in html.lower()
     assert 'enctype="multipart/form-data"' in html

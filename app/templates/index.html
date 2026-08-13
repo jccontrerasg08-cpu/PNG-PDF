@@ -3,14 +3,18 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>anythingintopdfbot</title>
+    <meta name="description" content="Convert photos, HEIC, Word, Excel, SVG, and notes to PDF. Web, API, CLI, and Telegram. Files are not persisted." />
+    <title>{{ display_name }}</title>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
     <main class="card">
-      <p class="eyebrow">FastAPI · Kubernetes ready</p>
-      <h1>Convert images and documents to PDF</h1>
-      <p class="lede">Upload one or more photos, SVGs, PDFs, Office files (including old .doc), or notes. You get a PDF back. Files are not persisted.</p>
+      <p class="eyebrow">Web · API · Telegram · CLI</p>
+      <h1>{{ display_name }}</h1>
+      <p class="lede">Drop photos (including iPhone HEIC), Word/Excel/PowerPoint (including old .doc), SVG, or notes. You get a PDF. Files are not persisted.</p>
+      {% if telegram_bot_username %}
+      <p class="lede">Also on Telegram: <a href="https://t.me/{{ telegram_bot_username }}">@{{ telegram_bot_username }}</a></p>
+      {% endif %}
 
       <form id="convert" action="/api/convert" method="post" enctype="multipart/form-data">
         <label for="file">Choose files or drop them here</label>

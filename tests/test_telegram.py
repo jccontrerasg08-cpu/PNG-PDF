@@ -159,3 +159,16 @@ def test_homepage_mentions_drop_files() -> None:
     html = client.get("/").text
     assert "drop" in html.lower()
     assert "addEventListener(\"drop\"" in html
+
+
+def test_homepage_links_telegram_when_username_set(monkeypatch) -> None:
+    monkeypatch.setenv("TELEGRAM_BOT_USERNAME", "@MyPdfBot")
+    html = client.get("/").text
+    assert "https://t.me/MyPdfBot" in html
+    assert "@MyPdfBot" in html
+
+
+def test_homepage_hides_telegram_link_without_username(monkeypatch) -> None:
+    monkeypatch.delenv("TELEGRAM_BOT_USERNAME", raising=False)
+    html = client.get("/").text
+    assert "t.me/" not in html

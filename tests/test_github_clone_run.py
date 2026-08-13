@@ -136,6 +136,7 @@ def test_openapi_json_documents_convert() -> None:
     assert isinstance(spec, dict)
     paths = spec.get("paths") or {}
     assert "/api/convert" in paths
+    assert spec.get("info", {}).get("title") == "Anything into PDF"
 
 
 def test_requirements_txt_pins_same_core_libs_as_pyproject() -> None:

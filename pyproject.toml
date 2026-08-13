@@ -4,8 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "anythingintopdfbot"
-version = "0.1.0"
-description = "FastAPI service for converting uploaded images, PDFs, and text to PDF"
+version = "0.2.0"
+description = "Convert photos, Office, SVG, and text to PDF — web, API, CLI, and Telegram"
+keywords = ["pdf", "converter", "telegram-bot", "fastapi", "heic"]
 requires-python = ">=3.10"
 dependencies = [
   "cairosvg>=2.7.0",
