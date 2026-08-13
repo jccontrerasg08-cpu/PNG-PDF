@@ -80,3 +80,10 @@ def test_homepage_has_viewport_meta_and_english_lang() -> None:
     assert 'lang="en"' in html
     assert 'name="viewport"' in html
     assert "width=device-width" in html
+
+
+def test_browser_favicon_request_is_not_a_console_404() -> None:
+    response = client.get("/favicon.ico")
+
+    assert response.status_code != 500
+    assert response.status_code != 404

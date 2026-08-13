@@ -3,7 +3,7 @@ from shutil import rmtree
 from tempfile import mkdtemp
 
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile, status
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from starlette.background import BackgroundTask
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -33,6 +33,11 @@ def healthz() -> dict[str, str]:
 @app.get("/readyz", tags=["health"])
 def readyz() -> dict[str, str]:
     return {"status": "ready"}
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon() -> Response:
+    return Response(status_code=204)
 
 
 @app.get("/", response_class=HTMLResponse, tags=["web"])
