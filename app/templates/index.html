@@ -14,7 +14,7 @@
 
       <form action="/api/convert" method="post" enctype="multipart/form-data">
         <label for="file">Choose a file</label>
-        <input id="file" name="file" type="file" required />
+        <input id="file" name="file" type="file" required accept="{{ supported_extensions|join(',') }}" />
         <button type="submit">Convert to PDF</button>
       </form>
 
