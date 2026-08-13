@@ -82,10 +82,24 @@ def test_image_pdf_uses_96_dpi_when_metadata_missing(tmp_path: Path) -> None:
     Image.new("RGB", (96, 96), "blue").save(source)
 
     result = ImageToPdfConverter().convert(source, tmp_path)
-    width, height = _pdf_mediabox(result.path.read_bytes())
+    pdf = result.path.read_bytes()
+    width, height = _pdf_mediabox(pdf)
 
     assert width == pytest.approx(72.0)
     assert height == pytest.approx(72.0)
+    assert b"/FlateDecode" in pdf
+
+
+def test_jpeg_bytes_are_embedded_without_reencoding(tmp_path: Path) -> None:
+    source = tmp_path / "photo.jpg"
+    Image.new("RGB", (32, 24), "green").save(source, format="JPEG", quality=85)
+    jpeg = source.read_bytes()
+
+    result = ImageToPdfConverter().convert(source, tmp_path)
+    pdf = result.path.read_bytes()
+
+    assert jpeg in pdf
+    assert b"/DCTDecode" in pdf
 
 
 def test_decompression_bomb_is_rejected(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

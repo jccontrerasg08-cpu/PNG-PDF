@@ -11,6 +11,7 @@ import tomllib
 from io import BytesIO
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
@@ -69,6 +70,7 @@ def test_readme_documents_clone_commands() -> None:
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "pip install -e" in readme or "pip install" in readme
     assert "uvicorn app.main:app" in readme
+    assert "python -m app" in readme
     assert "pytest" in readme
 
 
@@ -146,3 +148,16 @@ def test_requirements_txt_pins_same_core_libs_as_pyproject() -> None:
     for lib in CORE_LIBS:
         assert lib in pyproject_names
         assert lib in req_names
+
+
+def test_python_m_app_writes_pdf_next_to_cwd(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.__main__ import main
+
+    monkeypatch.chdir(tmp_path)
+    source = tmp_path / "photo.png"
+    source.write_bytes(_tiny_png())
+
+    assert main(["photo.png"]) == 0
+    pdf = tmp_path / "photo.pdf"
+    assert pdf.read_bytes().startswith(b"%PDF")
+    assert b"%%EOF" in pdf.read_bytes()
