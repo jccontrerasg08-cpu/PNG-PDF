@@ -10,7 +10,8 @@ class PdfPassthroughConverter:
     supported_extensions = {".pdf"}
 
     def convert(self, source: Path, destination_dir: Path) -> ConversionResult:
-        header = source.read_bytes()[:1024]
+        with source.open("rb") as handle:
+            header = handle.read(1024)
         if b"%PDF-" not in header:
             raise UnsupportedConversionError("The uploaded file is not a valid PDF.")
 

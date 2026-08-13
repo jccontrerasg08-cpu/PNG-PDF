@@ -17,7 +17,7 @@ FastAPI web application and REST API for converting uploaded files into PDFs. Th
 
 | Module | Extensions | Behavior |
 | --- | --- | --- |
-| PDF | `.pdf` | Passes through files that start with `%PDF-`. Rejects non-PDF bytes named `.pdf`. |
+| PDF | `.pdf` | Passes through files that contain `%PDF-` in the first 1KB. Rejects non-PDF bytes named `.pdf`. |
 | Images | `.png`, `.jpg`, `.jpeg`, `.webp`, `.bmp`, `.tiff`, `.tif` | Converts to PDF with Pillow. Applies EXIF orientation, uses 96 DPI when metadata is missing, and composites transparent pixels onto white. |
 | Documents | `.txt`, `.md` | Renders UTF-8 text (including a BOM) as paginated A4 PDFs. `.md` is drawn as source text, not rendered Markdown. |
 

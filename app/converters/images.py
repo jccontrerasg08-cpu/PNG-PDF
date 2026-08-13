@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 
 from PIL import Image, ImageOps, UnidentifiedImageError
@@ -17,25 +18,32 @@ class ImageToPdfConverter:
     def convert(self, source: Path, destination_dir: Path) -> ConversionResult:
         destination = destination_dir / f"{source.stem}.pdf"
         try:
-            with Image.open(source) as image:
-                dpi = self._pdf_dpi(image)
-                frames = []
-                for frame_index in range(getattr(image, "n_frames", 1)):
-                    image.seek(frame_index)
-                    oriented = ImageOps.exif_transpose(image) or image
-                    frames.append(self._flatten_to_rgb(oriented))
+            with warnings.catch_warnings():
+                warnings.simplefilter("error", Image.DecompressionBombWarning)
+                with Image.open(source) as image:
+                    dpi = self._pdf_dpi(image)
+                    frames = []
+                    for frame_index in range(getattr(image, "n_frames", 1)):
+                        image.seek(frame_index)
+                        oriented = ImageOps.exif_transpose(image) or image
+                        frames.append(self._flatten_to_rgb(oriented))
 
-                first_frame, *remaining_frames = frames
-                # ponytail: Pillow RGB PDF is JPEG; quality=95 until lossless embed (img2pdf) matters
-                first_frame.save(
-                    destination,
-                    "PDF",
-                    save_all=True,
-                    append_images=remaining_frames,
-                    dpi=dpi,
-                    quality=95,
-                )
-        except (UnidentifiedImageError, OSError, Image.DecompressionBombError) as exc:
+                    first_frame, *remaining_frames = frames
+                    # ponytail: Pillow RGB PDF is JPEG; quality=95 until lossless embed (img2pdf) matters
+                    first_frame.save(
+                        destination,
+                        "PDF",
+                        save_all=True,
+                        append_images=remaining_frames,
+                        dpi=dpi,
+                        quality=95,
+                    )
+        except (
+            UnidentifiedImageError,
+            OSError,
+            Image.DecompressionBombError,
+            Image.DecompressionBombWarning,
+        ) as exc:
             raise UnsupportedConversionError("The uploaded image could not be read.") from exc
 
         return ConversionResult(path=destination, filename=destination.name)

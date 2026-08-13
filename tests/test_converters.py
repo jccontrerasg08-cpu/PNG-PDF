@@ -97,6 +97,17 @@ def test_decompression_bomb_is_rejected(tmp_path: Path, monkeypatch: pytest.Monk
         ImageToPdfConverter().convert(source, tmp_path)
 
 
+def test_near_limit_image_is_rejected_as_decompression_bomb(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(Image, "MAX_IMAGE_PIXELS", 1000)
+    source = tmp_path / "large.png"
+    Image.new("RGB", (32, 32), "red").save(source)
+
+    with pytest.raises(UnsupportedConversionError):
+        ImageToPdfConverter().convert(source, tmp_path)
+
+
 def test_valid_pdf_is_passthrough(tmp_path: Path) -> None:
     source = tmp_path / "ok.pdf"
     payload = b"%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n"

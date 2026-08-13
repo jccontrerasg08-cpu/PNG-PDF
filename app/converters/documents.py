@@ -12,7 +12,7 @@ class TextDocumentToPdfConverter:
     page_size = (1240, 1754)  # A4 pixels at 150 DPI
     margin = 90
     line_spacing = 10
-    max_pages = 50
+    max_pages = 20
     pdf_dpi = 150.0
 
     def convert(self, source: Path, destination_dir: Path) -> ConversionResult:
