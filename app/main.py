@@ -66,7 +66,7 @@ async def convert(file: UploadFile = File(...)) -> FileResponse:
         total_size += len(chunk)
         if total_size > settings.max_upload_size_bytes:
             raise HTTPException(
-                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                status_code=status.HTTP_413_CONTENT_TOO_LARGE,
                 detail="Uploaded file is too large.",
             )
         chunks.append(chunk)
@@ -85,7 +85,7 @@ async def convert(file: UploadFile = File(...)) -> FileResponse:
         )
     except UnsupportedConversionError as exc:
         rmtree(temp_dir, ignore_errors=True)
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)) from exc
     except Exception:
         rmtree(temp_dir, ignore_errors=True)
         raise

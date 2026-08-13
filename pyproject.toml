@@ -1,7 +1,11 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "anythingintopdfbot"
 version = "0.1.0"
-description = "FastAPI service for converting anythingintopdfbot uploads to PDF"
+description = "FastAPI service for converting uploaded images, PDFs, and text to PDF"
 requires-python = ">=3.10"
 dependencies = [
   "fastapi>=0.115.0",
@@ -19,6 +23,9 @@ test = [
   "pytest>=8.2.0",
   "pyyaml>=6.0",
 ]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

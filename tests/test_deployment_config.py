@@ -48,3 +48,16 @@ def test_runtime_and_dockerfile_python_versions_match() -> None:
     dockerfile_version = match.group(1)
 
     assert runtime_version == f"python-{'.'.join(dockerfile_version.split('.')[:2])}"
+
+
+def test_tencent_workflow_applies_kustomize_from_k8s_directory() -> None:
+    workflow = (REPO_ROOT / ".github" / "workflows" / "tencent.yml").read_text()
+
+    assert "working-directory: k8s" in workflow
+    assert "rollout status deployment/${DEPLOYMENT_NAME} -n anythingintopdfbot" in workflow
+
+
+def test_pyproject_limits_setuptools_to_app_package() -> None:
+    pyproject = (REPO_ROOT / "pyproject.toml").read_text()
+
+    assert 'include = ["app*"]' in pyproject
