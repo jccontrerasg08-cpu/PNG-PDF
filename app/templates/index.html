@@ -12,8 +12,8 @@
       <h1>Convert images and documents to PDF</h1>
       <p class="lede">Upload one or more photos, SVGs, PDFs, Office files (including old .doc), or notes. You get a PDF back. Files are not persisted.</p>
 
-      <form action="/api/convert" method="post" enctype="multipart/form-data">
-        <label for="file">Choose files</label>
+      <form id="convert" action="/api/convert" method="post" enctype="multipart/form-data">
+        <label for="file">Choose files or drop them here</label>
         <input id="file" name="file" type="file" required multiple accept="{{ supported_extensions|join(',') }}" />
         <button type="submit">Convert to PDF</button>
       </form>
@@ -27,5 +27,21 @@
         </ul>
       </section>
     </main>
+    <script>
+      const form = document.getElementById("convert");
+      const input = document.getElementById("file");
+      form.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        form.classList.add("drop");
+      });
+      form.addEventListener("dragleave", () => form.classList.remove("drop"));
+      form.addEventListener("drop", (event) => {
+        event.preventDefault();
+        form.classList.remove("drop");
+        if (event.dataTransfer.files.length) {
+          input.files = event.dataTransfer.files;
+        }
+      });
+    </script>
   </body>
 </html>

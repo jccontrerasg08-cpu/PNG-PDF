@@ -4,8 +4,9 @@ FastAPI web application and REST API for converting uploaded files into PDFs. Th
 
 ## Features
 
-- Web upload page at `/` (multi-file; merged into one PDF)
+- Web upload page at `/` (multi-file or drag-and-drop; merged into one PDF)
 - REST conversion endpoint at `/api/convert`
+- Optional Telegram bot: send a photo or file, get a PDF back (`TELEGRAM_BOT_TOKEN`)
 - Supported-types endpoint at `/api/supported-types`
 - Health endpoint at `/healthz`
 - Readiness endpoint at `/readyz`
@@ -37,6 +38,30 @@ Open <http://localhost:8000> to use the web UI, or convert without the server:
 ```bash
 python -m app photo.png notes.txt
 ```
+
+## Telegram bot
+
+Same converter as the web UI. Not a clone of [iLovePDF-bot](https://github.com/nabilanavab/ilovepdf) (no watermark/OCR/pdf-to-image). Pattern from [Doc2Pdf-bot](https://github.com/AlejandroFuster/Doc2Pdf-bot): send a file, get a PDF.
+
+1. Talk to [@BotFather](https://core.telegram.org/bots/tutorial), copy the token.
+2. Local polling (no public HTTPS):
+
+```bash
+export TELEGRAM_BOT_TOKEN=123456:ABC
+python -m app.telegram
+```
+
+3. Or webhook on the same FastAPI process (`POST /telegram/webhook`):
+
+```bash
+export TELEGRAM_BOT_TOKEN=123456:ABC
+export TELEGRAM_WEBHOOK_SECRET=optional-shared-secret
+curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
+  --data-urlencode "url=https://YOUR_HOST/telegram/webhook" \
+  --data-urlencode "secret_token=$TELEGRAM_WEBHOOK_SECRET"
+```
+
+Without `TELEGRAM_BOT_TOKEN`, `/telegram/webhook` returns 404 and the web UI still works.
 
 ## Tests
 

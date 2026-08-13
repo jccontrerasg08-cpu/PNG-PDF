@@ -53,6 +53,11 @@ form {
   padding: 1.25rem;
 }
 
+form.drop {
+  border-color: #0f766e;
+  background: #ccfbf1;
+}
+
 label {
   font-weight: 700;
 }

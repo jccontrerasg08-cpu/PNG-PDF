@@ -7,8 +7,7 @@ from pathlib import Path
 from shutil import copy2, rmtree
 from tempfile import mkdtemp
 
-from app.converters import UnsupportedConversionError, convert_to_pdf
-from app.converters.merge import merge_pdfs
+from app.jobs import ConversionRejected, convert_named_files
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -24,17 +23,14 @@ def main(argv: list[str] | None = None) -> int:
 
     temp_dir = Path(mkdtemp(prefix="anythingintopdfbot-"))
     try:
-        results = [convert_to_pdf(path, temp_dir) for path in paths]
-        if len(results) == 1:
-            output = Path.cwd() / results[0].filename
-            copy2(results[0].path, output)
-        else:
-            output = Path.cwd() / "converted.pdf"
-            merge_pdfs([item.path for item in results], output)
+        items = [(path.name, path.read_bytes()) for path in paths]
+        result = convert_named_files(items, temp_dir)
+        output = Path.cwd() / result.filename
+        copy2(result.path, output)
         print(output)
         return 0
-    except UnsupportedConversionError as exc:
-        print(exc, file=sys.stderr)
+    except ConversionRejected as exc:
+        print(exc.detail, file=sys.stderr)
         return 1
     finally:
         rmtree(temp_dir, ignore_errors=True)
