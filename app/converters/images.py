@@ -2,8 +2,12 @@ import warnings
 from pathlib import Path
 
 from PIL import Image, ImageOps, UnidentifiedImageError
+from pillow_heif import register_heif_opener
 
 from app.converters.base import ConversionResult, UnsupportedConversionError
+
+# pillow-heif README: register once so Image.open handles iPhone HEIC/HEIF.
+register_heif_opener()
 
 # img2pdf uses 96 when metadata is missing; Pillow PDF defaults to 72, which
 # turns phone photos into poster-sized pages.
@@ -13,7 +17,18 @@ _DEFAULT_DPI = 96.0
 class ImageToPdfConverter:
     """Convert raster image files into PDFs using Pillow."""
 
-    supported_extensions = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff", ".tif"}
+    supported_extensions = {
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".webp",
+        ".bmp",
+        ".tiff",
+        ".tif",
+        ".gif",
+        ".heic",
+        ".heif",
+    }
 
     def convert(self, source: Path, destination_dir: Path) -> ConversionResult:
         destination = destination_dir / f"{source.stem}.pdf"

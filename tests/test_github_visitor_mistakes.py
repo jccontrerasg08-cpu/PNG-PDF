@@ -48,31 +48,34 @@ def test_empty_pdf_returns_422_not_500() -> None:
 
 
 @pytest.mark.parametrize("filename", ["report.docx", "sheet.xlsx", "slides.pptx"])
-def test_office_document_upload_returns_415_not_500(filename: str) -> None:
+def test_corrupt_office_document_returns_422_not_500(filename: str) -> None:
     response = _post_file(
         filename,
         b"PK\x03\x04not-really-office",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     )
 
-    assert response.status_code == 415
+    assert response.status_code == 422
 
 
-def test_iphone_heic_returns_415() -> None:
+def test_corrupt_iphone_heic_returns_422() -> None:
     response = _post_file("IMG_0001.heic", b"\x00\x00\x00\x18ftypheic", "image/heic")
 
-    assert response.status_code == 415
+    assert response.status_code == 422
 
 
-@pytest.mark.parametrize(
-    ("filename", "content", "content_type"),
-    [
-        ("funny.gif", b"GIF89a", "image/gif"),
-        ("icon.svg", b'<svg xmlns="http://www.w3.org/2000/svg"></svg>', "image/svg+xml"),
-    ],
-)
-def test_gif_and_svg_return_415(filename: str, content: bytes, content_type: str) -> None:
-    response = _post_file(filename, content, content_type)
+def test_truncated_gif_returns_422() -> None:
+    response = _post_file("funny.gif", b"GIF89a", "image/gif")
+
+    assert response.status_code == 422
+
+
+def test_svg_returns_415() -> None:
+    response = _post_file(
+        "icon.svg",
+        b'<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+        "image/svg+xml",
+    )
 
     assert response.status_code == 415
 

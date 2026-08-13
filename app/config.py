@@ -6,6 +6,7 @@ class Settings(BaseModel):
 
     app_name: str = "anythingintopdfbot"
     max_upload_size_bytes: int = 25 * 1024 * 1024
+    max_upload_files: int = 10
     allowed_extensions: set[str] = {
         ".png",
         ".jpg",
@@ -14,9 +15,15 @@ class Settings(BaseModel):
         ".bmp",
         ".tiff",
         ".tif",
+        ".gif",
+        ".heic",
+        ".heif",
         ".pdf",
         ".txt",
         ".md",
+        ".docx",
+        ".xlsx",
+        ".pptx",
     }
 
 

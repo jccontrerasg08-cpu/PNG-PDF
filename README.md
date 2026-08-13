@@ -4,7 +4,7 @@ FastAPI web application and REST API for converting uploaded files into PDFs. Th
 
 ## Features
 
-- Web upload page at `/`
+- Web upload page at `/` (multi-file; merged into one PDF)
 - REST conversion endpoint at `/api/convert`
 - Supported-types endpoint at `/api/supported-types`
 - Health endpoint at `/healthz`
@@ -18,8 +18,9 @@ FastAPI web application and REST API for converting uploaded files into PDFs. Th
 | Module | Extensions | Behavior |
 | --- | --- | --- |
 | PDF | `.pdf` | Passes through files that contain `%PDF-` in the first 1KB. Rejects non-PDF bytes named `.pdf`. |
-| Images | `.png`, `.jpg`, `.jpeg`, `.webp`, `.bmp`, `.tiff`, `.tif` | Converts to PDF with Pillow. Applies EXIF orientation, uses 96 DPI when metadata is missing, and composites transparent pixels onto white. |
+| Images | `.png`, `.jpg`, `.jpeg`, `.webp`, `.bmp`, `.tiff`, `.tif`, `.gif`, `.heic`, `.heif` | Converts to PDF with Pillow (+ pillow-heif for iPhone HEIC). Applies EXIF orientation, uses 96 DPI when metadata is missing, and composites transparent pixels onto white. |
 | Documents | `.txt`, `.md` | Renders UTF-8 text (including a BOM) as paginated A4 PDFs. `.md` is drawn as source text, not rendered Markdown. |
+| Office | `.docx`, `.xlsx`, `.pptx` | Extracts text (and table cells / slide text) and renders the same A4 text PDF. Layout is not preserved. |
 
 ## Local development
 

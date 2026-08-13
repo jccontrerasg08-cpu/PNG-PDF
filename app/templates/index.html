@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>anythingintopdfbot</title>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
@@ -10,11 +10,11 @@
     <main class="card">
       <p class="eyebrow">FastAPI · Kubernetes ready</p>
       <h1>Convert images and documents to PDF</h1>
-      <p class="lede">Upload a supported file and receive a generated PDF immediately. Files are processed in temporary storage and are not persisted.</p>
+      <p class="lede">Upload one or more photos, PDFs, Word/Excel/PowerPoint files, or notes. You get a PDF back. Files are not persisted.</p>
 
       <form action="/api/convert" method="post" enctype="multipart/form-data">
-        <label for="file">Choose a file</label>
-        <input id="file" name="file" type="file" required accept="{{ supported_extensions|join(',') }}" />
+        <label for="file">Choose files</label>
+        <input id="file" name="file" type="file" required multiple accept="{{ supported_extensions|join(',') }}" />
         <button type="submit">Convert to PDF</button>
       </form>
 

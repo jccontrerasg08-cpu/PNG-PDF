@@ -10,7 +10,8 @@ from fastapi.templating import Jinja2Templates
 
 from app.config import settings
 from app.converters import UnsupportedConversionError, convert_to_pdf, get_supported_extensions
-from app.converters.base import extract_extension
+from app.converters.base import ConversionResult, extract_extension
+from app.converters.merge import merge_pdfs
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -23,6 +24,10 @@ def _effective_extensions() -> set[str]:
     """Extensions that are both technically convertible and allowed by settings."""
 
     return get_supported_extensions() & settings.allowed_extensions
+
+
+def _wants_html(request: Request) -> bool:
+    return "text/html" in request.headers.get("accept", "")
 
 
 @app.get("/healthz", tags=["health"])
@@ -55,39 +60,53 @@ def supported_types() -> dict[str, list[str]]:
 
 
 @app.post("/api/convert", tags=["conversion"])
-async def convert(file: UploadFile = File(...)) -> FileResponse:
-    filename = Path(file.filename or "upload").name
-    extension = extract_extension(filename)
-    if extension not in _effective_extensions():
-        raise HTTPException(
-            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail=f"Unsupported file type '{extension}'.",
-        )
+async def convert(file: list[UploadFile] = File(...)) -> FileResponse:
+    if len(file) > settings.max_upload_files:
+        raise HTTPException(status_code=400, detail="Too many files.")
 
-    chunk_size = 1024 * 1024
-    chunks: list[bytes] = []
-    total_size = 0
-    while chunk := await file.read(chunk_size):
-        total_size += len(chunk)
-        if total_size > settings.max_upload_size_bytes:
+    for upload in file:
+        filename = Path(upload.filename or "upload").name
+        extension = extract_extension(filename)
+        if extension not in _effective_extensions():
             raise HTTPException(
-                status_code=413,
-                detail="Uploaded file is too large.",
+                status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                detail=f"Unsupported file type '{extension}'.",
             )
-        chunks.append(chunk)
-    contents = b"".join(chunks)
 
     temp_dir = Path(mkdtemp(prefix="anythingintopdfbot-"))
+    results: list[ConversionResult] = []
+    total_size = 0
     try:
-        source = temp_dir / filename
-        source.write_bytes(contents)
-        result = convert_to_pdf(source, temp_dir)
+        for index, upload in enumerate(file):
+            filename = Path(upload.filename or "upload").name
+            chunks: list[bytes] = []
+            while chunk := await upload.read(1024 * 1024):
+                total_size += len(chunk)
+                if total_size > settings.max_upload_size_bytes:
+                    raise HTTPException(status_code=413, detail="Uploaded file is too large.")
+                chunks.append(chunk)
+            source = temp_dir / filename
+            if source.exists():
+                source = temp_dir / f"{source.stem}-{index}{source.suffix}"
+            source.write_bytes(b"".join(chunks))
+            results.append(convert_to_pdf(source, temp_dir))
+
+        if len(results) == 1:
+            result = results[0]
+        else:
+            merged = temp_dir / "converted.pdf"
+            merge_pdfs([item.path for item in results], merged)
+            result = ConversionResult(path=merged, filename="converted.pdf")
+
         return FileResponse(
             result.path,
             media_type=result.media_type,
             filename=result.filename,
             background=BackgroundTask(rmtree, temp_dir, ignore_errors=True),
         )
+    except HTTPException:
+        rmtree(temp_dir, ignore_errors=True)
+        raise
     except UnsupportedConversionError as exc:
         rmtree(temp_dir, ignore_errors=True)
         raise HTTPException(status_code=422, detail=str(exc)) from exc
@@ -97,5 +116,12 @@ async def convert(file: UploadFile = File(...)) -> FileResponse:
 
 
 @app.exception_handler(HTTPException)
-def http_exception_handler(_: Request, exc: HTTPException) -> JSONResponse:
+def http_exception_handler(request: Request, exc: HTTPException) -> HTMLResponse | JSONResponse:
+    if _wants_html(request):
+        return templates.TemplateResponse(
+            request,
+            "error.html",
+            {"detail": exc.detail, "status_code": exc.status_code},
+            status_code=exc.status_code,
+        )
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
