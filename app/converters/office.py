@@ -4,6 +4,9 @@ from app.converters.base import ConversionResult, UnsupportedConversionError
 from app.converters.documents import TextDocumentToPdfConverter
 from app.converters.libreoffice import LibreOfficeToPdfConverter, soffice_available
 
+_OLE = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
+_OOXML = {".docx", ".xlsx", ".pptx"}
+
 
 class OfficeToPdfConverter:
     """LibreOffice when present (layout-faithful, including old .doc); else OOXML text."""
@@ -11,12 +14,15 @@ class OfficeToPdfConverter:
     supported_extensions = LibreOfficeToPdfConverter.supported_extensions
 
     def convert(self, source: Path, destination_dir: Path) -> ConversionResult:
-        if soffice_available():
+        sniffed = self._sniff_ok(source)
+        if soffice_available() and sniffed:
             try:
                 return LibreOfficeToPdfConverter().convert(source, destination_dir)
             except UnsupportedConversionError:
-                if source.suffix.lower() not in {".docx", ".xlsx", ".pptx"}:
+                if source.suffix.lower() not in _OOXML:
                     raise
+        elif not sniffed and source.suffix.lower() not in _OOXML:
+            raise UnsupportedConversionError("The uploaded Office document could not be read.")
 
         try:
             text = self._extract(source)
@@ -63,3 +69,16 @@ class OfficeToPdfConverter:
         raise UnsupportedConversionError(
             "This file type needs LibreOffice (install writer/calc/impress for .doc/.xls/.ppt)."
         )
+
+    def _sniff_ok(self, source: Path) -> bool:
+        """Skip soffice when the name is Office but the bytes are not."""
+
+        extension = source.suffix.lower()
+        head = source.read_bytes()[:8]
+        if extension in {".docx", ".xlsx", ".pptx", ".odt", ".ods", ".odp"}:
+            return head.startswith(b"PK")
+        if extension in {".doc", ".xls", ".ppt"}:
+            return head.startswith(_OLE)
+        if extension == ".rtf":
+            return source.read_bytes()[:64].lstrip().startswith(b"{\\rtf")
+        return True
