@@ -18,9 +18,10 @@ FastAPI web application and REST API for converting uploaded files into PDFs. Th
 | Module | Extensions | Behavior |
 | --- | --- | --- |
 | PDF | `.pdf` | Passes through files that contain `%PDF-` in the first 1KB. Rejects non-PDF bytes named `.pdf`. |
-| Images | `.png`, `.jpg`, `.jpeg`, `.webp`, `.bmp`, `.tiff`, `.tif`, `.gif`, `.heic`, `.heif` | Converts to PDF with Pillow (+ pillow-heif for iPhone HEIC). Applies EXIF orientation, uses 96 DPI when metadata is missing, and composites transparent pixels onto white. |
+| Images | `.png`, `.jpg`, `.jpeg`, `.webp`, `.bmp`, `.tiff`, `.tif`, `.gif`, `.heic`, `.heif` | Converts to PDF with Pillow (+ pillow-heif for iPhone HEIC). Applies EXIF orientation, uses 96 DPI when metadata is missing, and composites transparent pixels onto white. A `.heic`/`.heif` name is rejected unless the bytes are actually HEIC/HEIF. |
+| SVG | `.svg`, `.svgz` | CairoSVG to PDF. If CairoSVG is not installed, LibreOffice Draw is used when present. |
 | Documents | `.txt`, `.md` | Renders UTF-8 text (including a BOM) as paginated A4 PDFs. `.md` is drawn as source text, not rendered Markdown. |
-| Office | `.docx`, `.xlsx`, `.pptx` | Extracts text (and table cells / slide text) and renders the same A4 text PDF. Layout is not preserved. |
+| Office | `.doc`, `.docx`, `.xls`, `.xlsx`, `.ppt`, `.pptx`, `.odt`, `.ods`, `.odp`, `.rtf` | Headless LibreOffice PDF (layout preserved, including old `.doc`). Without LibreOffice, `.docx`/`.xlsx`/`.pptx` fall back to extracted text on A4. |
 
 ## Local development
 

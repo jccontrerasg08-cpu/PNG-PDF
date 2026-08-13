@@ -70,14 +70,22 @@ def test_truncated_gif_returns_422() -> None:
     assert response.status_code == 422
 
 
-def test_svg_returns_415() -> None:
-    response = _post_file(
-        "icon.svg",
-        b'<svg xmlns="http://www.w3.org/2000/svg"></svg>',
-        "image/svg+xml",
-    )
+def test_garbage_svg_returns_422() -> None:
+    response = _post_file("icon.svg", b"not-an-svg", "image/svg+xml")
 
-    assert response.status_code == 415
+    assert response.status_code == 422
+
+
+def test_heic_from_non_heic_bytes_returns_422() -> None:
+    response = _post_file("IMG_0001.heic", b"this is a jpeg joke not heic", "image/heic")
+
+    assert response.status_code == 422
+
+
+def test_jpeg_bytes_named_heic_returns_422() -> None:
+    response = _post_file("IMG_0001.heic", _jpeg_bytes(), "image/heic")
+
+    assert response.status_code == 422
 
 
 def test_double_extension_pdf_exe_returns_415() -> None:

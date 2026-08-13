@@ -2,14 +2,22 @@ from pathlib import Path
 
 from app.converters.base import ConversionResult, UnsupportedConversionError
 from app.converters.documents import TextDocumentToPdfConverter
+from app.converters.libreoffice import LibreOfficeToPdfConverter, soffice_available
 
 
 class OfficeToPdfConverter:
-    """Turn Word/Excel/PowerPoint into a text PDF (no LibreOffice process)."""
+    """LibreOffice when present (layout-faithful, including old .doc); else OOXML text."""
 
-    supported_extensions = {".docx", ".xlsx", ".pptx"}
+    supported_extensions = LibreOfficeToPdfConverter.supported_extensions
 
     def convert(self, source: Path, destination_dir: Path) -> ConversionResult:
+        if soffice_available():
+            try:
+                return LibreOfficeToPdfConverter().convert(source, destination_dir)
+            except UnsupportedConversionError:
+                if source.suffix.lower() not in {".docx", ".xlsx", ".pptx"}:
+                    raise
+
         try:
             text = self._extract(source)
         except UnsupportedConversionError:
@@ -52,4 +60,6 @@ class OfficeToPdfConverter:
                     if getattr(shape, "has_text_frame", False):
                         lines.append(shape.text_frame.text)
             return "\n".join(lines)
-        raise UnsupportedConversionError(f"Files with extension '{extension}' are not supported yet.")
+        raise UnsupportedConversionError(
+            "This file type needs LibreOffice (install writer/calc/impress for .doc/.xls/.ppt)."
+        )

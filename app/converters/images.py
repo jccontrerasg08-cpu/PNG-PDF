@@ -4,7 +4,7 @@ from pathlib import Path
 from PIL import Image, ImageOps, UnidentifiedImageError
 from pillow_heif import register_heif_opener
 
-from app.converters.base import ConversionResult, UnsupportedConversionError
+from app.converters.base import ConversionResult, UnsupportedConversionError, extract_extension
 
 # pillow-heif README: register once so Image.open handles iPhone HEIC/HEIF.
 register_heif_opener()
@@ -36,6 +36,11 @@ class ImageToPdfConverter:
             with warnings.catch_warnings():
                 warnings.simplefilter("error", Image.DecompressionBombWarning)
                 with Image.open(source) as image:
+                    if extract_extension(source.name) in {".heic", ".heif"} and (image.format or "").upper() not in {
+                        "HEIF",
+                        "HEIC",
+                    }:
+                        raise UnsupportedConversionError("The uploaded image could not be read.")
                     dpi = self._pdf_dpi(image)
                     frames = []
                     for frame_index in range(getattr(image, "n_frames", 1)):

@@ -1,5 +1,6 @@
-"""HEIC, Office, GIF, multi-file, and HTML errors — everyday device uploads."""
+"""HEIC, Office, GIF, SVG, multi-file, and HTML errors — everyday device uploads."""
 
+import gzip
 from io import BytesIO
 
 from docx import Document
@@ -132,3 +133,39 @@ def test_homepage_file_input_allows_multiple() -> None:
     assert ".heic" in html
     assert ".docx" in html
     assert ".gif" in html
+    assert ".svg" in html
+    assert ".doc" in html
+
+
+def test_supported_types_includes_svg_and_legacy_office() -> None:
+    extensions = client.get("/api/supported-types").json()["extensions"]
+    for ext in (".svg", ".svgz", ".doc", ".xls", ".ppt", ".odt", ".rtf"):
+        assert ext in extensions
+
+
+def test_svg_icon_converts_to_pdf() -> None:
+    svg = b'<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="#0f766e"/></svg>'
+    response = client.post(
+        "/api/convert",
+        files={"file": ("icon.svg", svg, "image/svg+xml")},
+    )
+    assert response.status_code == 200
+    assert response.content.startswith(b"%PDF")
+
+
+def test_svgz_icon_converts_to_pdf() -> None:
+    svg = b'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><circle cx="10" cy="10" r="8" fill="#0369a1"/></svg>'
+    response = client.post(
+        "/api/convert",
+        files={"file": ("icon.svgz", gzip.compress(svg), "image/svg+xml")},
+    )
+    assert response.status_code == 200
+    assert response.content.startswith(b"%PDF")
+
+
+def test_heic_named_file_with_png_bytes_returns_422() -> None:
+    response = client.post(
+        "/api/convert",
+        files={"file": ("IMG_9999.heic", _png(), "image/heic")},
+    )
+    assert response.status_code == 422

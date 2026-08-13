@@ -24,6 +24,15 @@ class Settings(BaseModel):
         ".docx",
         ".xlsx",
         ".pptx",
+        ".doc",
+        ".xls",
+        ".ppt",
+        ".odt",
+        ".ods",
+        ".odp",
+        ".rtf",
+        ".svg",
+        ".svgz",
     }
 
 
