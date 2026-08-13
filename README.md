@@ -26,6 +26,8 @@ FastAPI web application and REST API for converting uploaded files into PDFs. Th
 
 ## Local development
 
+On Debian/Ubuntu, install `python3-venv` first (`sudo apt install python3-venv`). SVG needs `libcairo2`; old `.doc` and layout-faithful Office need `libreoffice-writer`, `libreoffice-calc`, and `libreoffice-impress`.
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate
