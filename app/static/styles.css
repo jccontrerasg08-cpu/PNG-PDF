@@ -53,6 +53,11 @@ form {
   padding: 1.25rem;
 }
 
+form.drop {
+  border-color: #0f766e;
+  background: #ccfbf1;
+}
+
 label {
   font-weight: 700;
 }
@@ -61,6 +66,7 @@ input,
 button {
   border-radius: 12px;
   font: inherit;
+  font-size: 16px;
   padding: 0.9rem 1rem;
 }
 
@@ -95,4 +101,9 @@ button:hover {
   color: #134e4a;
   font-weight: 700;
   padding: 0.45rem 0.75rem;
+}
+
+a {
+  color: #0f766e;
+  font-weight: 700;
 }

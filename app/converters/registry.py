@@ -3,12 +3,16 @@ from pathlib import Path
 from app.converters.base import ConversionResult, Converter, UnsupportedConversionError, extract_extension
 from app.converters.documents import TextDocumentToPdfConverter
 from app.converters.images import ImageToPdfConverter
+from app.converters.office import OfficeToPdfConverter
 from app.converters.pdf import PdfPassthroughConverter
+from app.converters.svg import SvgToPdfConverter
 
 _CONVERTERS: tuple[Converter, ...] = (
     PdfPassthroughConverter(),
     ImageToPdfConverter(),
     TextDocumentToPdfConverter(),
+    OfficeToPdfConverter(),
+    SvgToPdfConverter(),
 )
 
 

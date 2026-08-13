@@ -9,21 +9,29 @@ class TextDocumentToPdfConverter:
     """Convert simple text-like documents into paginated PDF files."""
 
     supported_extensions = {".txt", ".md"}
-    page_size = (1240, 1754)
+    page_size = (1240, 1754)  # A4 pixels at 150 DPI
     margin = 90
     line_spacing = 10
+    max_pages = 20
+    pdf_dpi = 150.0
 
     def convert(self, source: Path, destination_dir: Path) -> ConversionResult:
         destination = destination_dir / f"{source.stem}.pdf"
         try:
-            text = source.read_text(encoding="utf-8")
+            text = source.read_text(encoding="utf-8-sig")
         except UnicodeDecodeError as exc:
             raise UnsupportedConversionError("Only UTF-8 text documents are supported for now.") from exc
 
         font = ImageFont.load_default(size=24)
         pages = self._render_pages(text or " ", font)
         first_page, *remaining_pages = pages
-        first_page.save(destination, "PDF", save_all=True, append_images=remaining_pages)
+        first_page.save(
+            destination,
+            "PDF",
+            save_all=True,
+            append_images=remaining_pages,
+            resolution=self.pdf_dpi,
+        )
         return ConversionResult(path=destination, filename=destination.name)
 
     def _render_pages(self, text: str, font: ImageFont.ImageFont) -> list[Image.Image]:
@@ -39,6 +47,10 @@ class TextDocumentToPdfConverter:
             for line in self._wrap_line(paragraph, font, max_width):
                 if y + line_height > self.page_size[1] - self.margin:
                     pages.append(page)
+                    if len(pages) >= self.max_pages:
+                        raise UnsupportedConversionError(
+                            "The uploaded text document has too many pages."
+                        )
                     page = self._new_page()
                     draw = ImageDraw.Draw(page)
                     y = self.margin

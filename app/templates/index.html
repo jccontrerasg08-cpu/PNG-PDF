@@ -2,19 +2,23 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>anythingintopdfbot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Convert photos, HEIC, Word, Excel, SVG, and notes to PDF. Web, API, CLI, and Telegram. Files are not persisted." />
+    <title>{{ display_name }}</title>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
     <main class="card">
-      <p class="eyebrow">FastAPI · Kubernetes ready</p>
-      <h1>Convert images and documents to PDF</h1>
-      <p class="lede">Upload a supported file and receive a generated PDF immediately. Files are processed in temporary storage and are not persisted.</p>
+      <p class="eyebrow">Web · API · Telegram · CLI</p>
+      <h1>{{ display_name }}</h1>
+      <p class="lede">Drop photos (including iPhone HEIC), Word/Excel/PowerPoint (including old .doc), SVG, or notes. You get a PDF. Files are not persisted.</p>
+      {% if telegram_bot_username %}
+      <p class="lede">Also on Telegram: <a href="https://t.me/{{ telegram_bot_username }}">@{{ telegram_bot_username }}</a></p>
+      {% endif %}
 
-      <form action="/api/convert" method="post" enctype="multipart/form-data">
-        <label for="file">Choose a file</label>
-        <input id="file" name="file" type="file" required />
+      <form id="convert" action="/api/convert" method="post" enctype="multipart/form-data">
+        <label for="file">Choose files or drop them here</label>
+        <input id="file" name="file" type="file" required multiple accept="{{ supported_extensions|join(',') }}" />
         <button type="submit">Convert to PDF</button>
       </form>
 
@@ -27,5 +31,21 @@
         </ul>
       </section>
     </main>
+    <script>
+      const form = document.getElementById("convert");
+      const input = document.getElementById("file");
+      form.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        form.classList.add("drop");
+      });
+      form.addEventListener("dragleave", () => form.classList.remove("drop"));
+      form.addEventListener("drop", (event) => {
+        event.preventDefault();
+        form.classList.remove("drop");
+        if (event.dataTransfer.files.length) {
+          input.files = event.dataTransfer.files;
+        }
+      });
+    </script>
   </body>
 </html>

@@ -104,3 +104,47 @@ def test_allowed_extensions_setting_actually_restricts_uploads(
         files={"file": ("sample.png", buffer, "image/png")},
     )
     assert response.status_code == 415
+
+
+def test_jpeg_upload_converts_to_pdf() -> None:
+    buffer = BytesIO()
+    Image.new("RGB", (24, 24), "green").save(buffer, format="JPEG")
+    buffer.seek(0)
+
+    response = client.post(
+        "/api/convert",
+        files={"file": ("photo.jpg", buffer, "image/jpeg")},
+    )
+
+    assert response.status_code == 200
+    assert response.content.startswith(b"%PDF")
+
+
+def test_txt_upload_converts_to_pdf() -> None:
+    response = client.post(
+        "/api/convert",
+        files={"file": ("note.txt", b"hello world\n", "text/plain")},
+    )
+
+    assert response.status_code == 200
+    assert response.content.startswith(b"%PDF")
+
+
+def test_pdf_upload_passthrough() -> None:
+    payload = b"%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n"
+    response = client.post(
+        "/api/convert",
+        files={"file": ("doc.pdf", payload, "application/pdf")},
+    )
+
+    assert response.status_code == 200
+    assert response.content.startswith(b"%PDF")
+
+
+def test_garbage_pdf_upload_returns_422() -> None:
+    response = client.post(
+        "/api/convert",
+        files={"file": ("fake.pdf", b"not a pdf", "application/pdf")},
+    )
+
+    assert response.status_code == 422

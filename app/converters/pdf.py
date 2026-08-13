@@ -1,15 +1,20 @@
 from pathlib import Path
 from shutil import copyfile
 
-from app.converters.base import ConversionResult
+from app.converters.base import ConversionResult, UnsupportedConversionError
 
 
 class PdfPassthroughConverter:
-    """Normalize already-PDF uploads into the common conversion result contract."""
+    """Pass through already-PDF uploads after a magic-byte check."""
 
     supported_extensions = {".pdf"}
 
     def convert(self, source: Path, destination_dir: Path) -> ConversionResult:
+        with source.open("rb") as handle:
+            header = handle.read(1024)
+        if b"%PDF-" not in header:
+            raise UnsupportedConversionError("The uploaded file is not a valid PDF.")
+
         destination = destination_dir / f"{source.stem}.pdf"
         if source.resolve() != destination.resolve():
             copyfile(source, destination)
