@@ -20,6 +20,17 @@ def soffice_available() -> bool:
     return _soffice_bin() is not None
 
 
+# What LibreOffice needs to start. It opens untrusted documents, so it gets
+# none of the service's own secrets (TELEGRAM_BOT_TOKEN and the like).
+_PASSTHROUGH_ENV = ("PATH", "LANG", "LC_ALL", "LC_CTYPE", "TZ", "TMPDIR", "TEMP", "TMP", "SYSTEMROOT")
+
+
+def _conversion_env(home: Path) -> dict[str, str]:
+    env = {name: os.environ[name] for name in _PASSTHROUGH_ENV if name in os.environ}
+    env["HOME"] = str(home)
+    return env
+
+
 def convert_with_soffice(source: Path, destination_dir: Path, target: str = "pdf") -> Path:
     """Run headless LibreOffice. `target` is pdf, doc, etc."""
 
@@ -29,8 +40,7 @@ def convert_with_soffice(source: Path, destination_dir: Path, target: str = "pdf
 
     profile = destination_dir / f"lo-profile-{uuid.uuid4().hex}"
     profile.mkdir(parents=True, exist_ok=True)
-    env = os.environ.copy()
-    env["HOME"] = str(destination_dir)
+    env = _conversion_env(destination_dir)
     command = [
         binary,
         "--headless",

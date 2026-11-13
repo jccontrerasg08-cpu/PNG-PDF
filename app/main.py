@@ -1,3 +1,4 @@
+import hmac
 import os
 from pathlib import Path
 from shutil import rmtree
@@ -113,8 +114,14 @@ async def telegram_webhook(request: Request) -> dict[str, bool]:
     token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
     if not token:
         raise HTTPException(status_code=404, detail="Not found.")
+    # Fail closed: this URL is public, and without the shared secret anyone
+    # could post forged updates that make the bot fetch files and message
+    # arbitrary chats with the real token.
     secret = os.environ.get("TELEGRAM_WEBHOOK_SECRET", "").strip()
-    if secret and request.headers.get("x-telegram-bot-api-secret-token") != secret:
+    if not secret:
+        raise HTTPException(status_code=503, detail="Telegram webhook secret is not configured.")
+    provided = request.headers.get("x-telegram-bot-api-secret-token", "")
+    if not hmac.compare_digest(provided.encode("utf-8"), secret.encode("utf-8")):
         raise HTTPException(status_code=403, detail="Forbidden.")
     update = await request.json()
     try:
