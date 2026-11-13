@@ -78,3 +78,18 @@ def test_rtf_converts_to_pdf() -> None:
     )
     assert response.status_code == 200
     assert response.content.startswith(b"%PDF")
+
+
+def test_libreoffice_does_not_inherit_service_secrets(monkeypatch, tmp_path) -> None:
+    """LibreOffice opens untrusted files: it must not see the bot token."""
+    from app.converters.libreoffice import _conversion_env
+
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123:secret")
+    monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", "s3cret")
+    monkeypatch.setenv("PATH", "/usr/bin")
+
+    env = _conversion_env(tmp_path)
+
+    assert env["HOME"] == str(tmp_path)
+    assert env["PATH"] == "/usr/bin"
+    assert not any("TELEGRAM" in name for name in env)

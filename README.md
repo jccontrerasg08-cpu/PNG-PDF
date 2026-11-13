@@ -43,13 +43,13 @@ On a public host, use a webhook instead of polling:
 
 ```bash
 export TELEGRAM_BOT_TOKEN=123456:ABC
-export TELEGRAM_WEBHOOK_SECRET=optional-shared-secret
+export TELEGRAM_WEBHOOK_SECRET=$(openssl rand -hex 32)   # required for the webhook
 curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
   --data-urlencode "url=https://YOUR_HOST/telegram/webhook" \
   --data-urlencode "secret_token=$TELEGRAM_WEBHOOK_SECRET"
 ```
 
-Without `TELEGRAM_BOT_TOKEN`, `/telegram/webhook` returns 404 and the web UI still works.
+Without `TELEGRAM_BOT_TOKEN`, `/telegram/webhook` returns 404 and the web UI still works. With a token but no `TELEGRAM_WEBHOOK_SECRET`, it returns 503: the URL is public, and the shared secret is the only thing that tells Telegram apart from anyone else.
 
 ## What it converts
 

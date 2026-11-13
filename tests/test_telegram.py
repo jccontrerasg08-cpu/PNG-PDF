@@ -123,9 +123,11 @@ def test_webhook_without_token_is_404() -> None:
 def test_webhook_with_token_converts_document(monkeypatch) -> None:
     transport = FakeTelegram(_png())
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "test-token")
+    monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", "s3cret")
     monkeypatch.setattr("app.main.TelegramApi", lambda token: TelegramApi(token, opener=transport))
     response = client.post(
         "/telegram/webhook",
+        headers={"X-Telegram-Bot-Api-Secret-Token": "s3cret"},
         json={
             "update_id": 1,
             "message": {
@@ -146,6 +148,32 @@ def test_webhook_rejects_bad_secret(monkeypatch) -> None:
         "/telegram/webhook",
         json={"update_id": 1},
         headers={"X-Telegram-Bot-Api-Secret-Token": "nope"},
+    )
+    assert response.status_code == 403
+
+
+def test_webhook_without_configured_secret_is_closed(monkeypatch) -> None:
+    """A token with no shared secret must not accept updates from anyone."""
+    transport = FakeTelegram(_png())
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "test-token")
+    monkeypatch.delenv("TELEGRAM_WEBHOOK_SECRET", raising=False)
+    monkeypatch.setattr("app.main.TelegramApi", lambda token: TelegramApi(token, opener=transport))
+    response = client.post(
+        "/telegram/webhook",
+        json={"update_id": 1, "message": {"chat": {"id": 9}, "document": {"file_id": "file-1", "file_name": "shot.png"}}},
+    )
+    assert response.status_code == 503
+    assert transport.documents == [] and transport.messages == []
+
+
+def test_webhook_rejects_missing_or_non_ascii_secret_header(monkeypatch) -> None:
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "test-token")
+    monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", "s3cret")
+    assert client.post("/telegram/webhook", json={"update_id": 1}).status_code == 403
+    response = client.post(
+        "/telegram/webhook",
+        content=b'{"update_id": 1}',
+        headers={"X-Telegram-Bot-Api-Secret-Token": "s3cr\u00e9t".encode("latin-1"), "Content-Type": "application/json"},
     )
     assert response.status_code == 403
 
