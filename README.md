@@ -4,9 +4,6 @@ Send a photo, Word file, spreadsheet, SVG, or note — get a PDF back. Use the w
 
 GitHub repo: [PNG-PDF](https://github.com/jccontrerasg08-cpu/PNG-PDF) · package: `anythingintopdfbot`
 
-**GitHub About / topics** (Settings → General → Topics): `pdf` `converter` `telegram-bot` `fastapi` `heic` `libreoffice` `docker`  
-Suggested description: `Anything into PDF — web, API, CLI, and Telegram. Send a file, get a PDF. Nothing is stored.`
-
 ## Quick start
 
 On Debian/Ubuntu, install `python3-venv` first (`sudo apt install python3-venv`). SVG needs `libcairo2`; old `.doc` and layout-faithful Office need `libreoffice-writer`, `libreoffice-calc`, and `libreoffice-impress`.
